@@ -18,6 +18,7 @@ class CifarExperimentConfig:
     epochs: int = 10
     learning_rate: float = 1e-3
     weight_decay: float = 1e-4
+    patience: int = 5
     seed: int = 42
     num_workers: int = 2
     n_folds: int = 5
@@ -25,6 +26,8 @@ class CifarExperimentConfig:
     output_dir: str = "./outputs"
     n_qubits: int = 4
     n_q_layers: int = 2
+    qml_device: str = "default.qubit"
+    require_cuda: bool = True
     deterministic: bool = True
 
     def to_dict(self) -> Dict[str, Any]:

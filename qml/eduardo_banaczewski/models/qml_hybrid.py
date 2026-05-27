@@ -1,10 +1,17 @@
 import torch
 import torch.nn as nn
 
-__all__ = ["QmlHybridCnn"]
+DEFAULT_QML_DEVICE = "default.qubit"
+
+__all__ = ["DEFAULT_QML_DEVICE", "QmlHybridCnn", "PureQcnnClassifier"]
 
 
-def _build_torch_layer(variant: str, n_qubits: int, n_q_layers: int):
+def _build_torch_layer(
+    variant: str,
+    n_qubits: int,
+    n_q_layers: int,
+    qml_device: str = DEFAULT_QML_DEVICE,
+):
     try:
         import pennylane as qml
         from pennylane import qnn
@@ -13,7 +20,12 @@ def _build_torch_layer(variant: str, n_qubits: int, n_q_layers: int):
             "Pennylane is required for QML models. Install project requirements first."
         ) from exc
 
-    device = qml.device("default.qubit", wires=n_qubits)
+    device = qml.device(qml_device, wires=n_qubits)
+    resolved_name = getattr(device, "short_name", getattr(device, "name", ""))
+    if resolved_name != qml_device:
+        raise RuntimeError(
+            f"Expected PennyLane device '{qml_device}', but got '{resolved_name}'."
+        )
 
     @qml.qnode(device, interface="torch")
     def quantum_circuit(inputs, weights):
@@ -57,8 +69,10 @@ class QmlHybridCnn(nn.Module):
         n_qubits: int = 4,
         n_q_layers: int = 2,
         num_classes: int = 10,
+        qml_device: str = DEFAULT_QML_DEVICE,
     ):
         super().__init__()
+        self.qml_device = qml_device
         self.features = nn.Sequential(
             nn.Conv2d(3, 32, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
@@ -73,10 +87,46 @@ class QmlHybridCnn(nn.Module):
             nn.Linear(128, n_qubits),
             nn.Tanh(),
         )
-        self.quantum = _build_torch_layer(variant, n_qubits, n_q_layers)
+        self.quantum = _build_torch_layer(
+            variant=variant,
+            n_qubits=n_qubits,
+            n_q_layers=n_q_layers,
+            qml_device=qml_device,
+        )
         self.classifier = nn.Linear(n_qubits, num_classes)
 
     def forward(self, x: torch.Tensor):
         x = self.features(x)
+        x = self.quantum(x)
+        return self.classifier(x)
+
+
+class PureQcnnClassifier(nn.Module):
+    def __init__(
+        self,
+        variant: str = "qcnn_pure_baseline",
+        n_qubits: int = 4,
+        n_q_layers: int = 2,
+        num_classes: int = 10,
+        qml_device: str = DEFAULT_QML_DEVICE,
+    ):
+        super().__init__()
+        q_variant = variant.replace("qcnn_pure_", "qml_", 1)
+        self.qml_device = qml_device
+        self.preprocess = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(3 * 32 * 32, n_qubits),
+            nn.Tanh(),
+        )
+        self.quantum = _build_torch_layer(
+            variant=q_variant,
+            n_qubits=n_qubits,
+            n_q_layers=n_q_layers,
+            qml_device=qml_device,
+        )
+        self.classifier = nn.Linear(n_qubits, num_classes)
+
+    def forward(self, x: torch.Tensor):
+        x = self.preprocess(x)
         x = self.quantum(x)
         return self.classifier(x)

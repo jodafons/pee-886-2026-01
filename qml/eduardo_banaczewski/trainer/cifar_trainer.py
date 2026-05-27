@@ -11,6 +11,7 @@ import torch.nn as nn
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import StratifiedKFold
 from torch.utils.data import DataLoader, Dataset, Subset
+from tqdm.auto import tqdm
 
 from qml.eduardo_banaczewski.evaluation.exporters import (
     save_metrics_json,
@@ -19,7 +20,10 @@ from qml.eduardo_banaczewski.evaluation.exporters import (
 from qml.eduardo_banaczewski.experiment import CifarExperimentConfig
 from qml.eduardo_banaczewski.visualization.plots import (
     plot_confusion_matrix,
+    plot_pca_projection,
     plot_fold_accuracy_comparison,
+    plot_quantum_circuit,
+    plot_tsne_projection,
     plot_training_curves,
 )
 
@@ -47,6 +51,11 @@ class CifarTrainer:
         self.output_dir = output_dir
         self.class_names = class_names
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if self.config.require_cuda and self.device.type != "cuda":
+            raise RuntimeError(
+                "CUDA is required for this experiment, but no CUDA device is available. "
+                "Use --allow-cpu to bypass this check."
+            )
         self.criterion = nn.CrossEntropyLoss()
         os.makedirs(self.output_dir, exist_ok=True)
 
@@ -74,6 +83,7 @@ class CifarTrainer:
         optimizer: torch.optim.Optimizer,
         loader: DataLoader,
         training: bool,
+        desc: str,
     ) -> Tuple[float, float]:
         """Run one epoch and return average loss and accuracy."""
         if training:
@@ -85,7 +95,14 @@ class CifarTrainer:
         correct = 0
         total = 0
         with torch.set_grad_enabled(training):
-            for images, labels in loader:
+            batch_bar = tqdm(
+                loader,
+                desc=desc,
+                unit="batch",
+                leave=False,
+                dynamic_ncols=True,
+            )
+            for images, labels in batch_bar:
                 images = images.to(self.device, non_blocking=True)
                 labels = labels.to(self.device, non_blocking=True)
                 if training:
@@ -98,6 +115,11 @@ class CifarTrainer:
                 running_loss += loss.item() * labels.size(0)
                 correct += (logits.argmax(dim=1) == labels).sum().item()
                 total += labels.size(0)
+                batch_bar.set_postfix(
+                    loss=f"{running_loss / total:.4f}",
+                    acc=f"{correct / total:.4f}",
+                )
+            batch_bar.close()
         return running_loss / total, correct / total
 
     def _fold_dir(self, fold_index: int) -> Path:
@@ -137,6 +159,7 @@ class CifarTrainer:
             "val_acc": [],
         }
         best_val_acc = -1.0
+        epochs_without_improvement = 0
         start_epoch = 0
         elapsed_seconds = 0.0
 
@@ -146,6 +169,9 @@ class CifarTrainer:
             optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
             history = checkpoint["history"]
             best_val_acc = checkpoint["best_val_acc"]
+            epochs_without_improvement = int(
+                checkpoint.get("epochs_without_improvement", 0)
+            )
             start_epoch = int(checkpoint["epoch"]) + 1
             elapsed_seconds = float(checkpoint.get("elapsed_seconds", 0.0))
 
@@ -163,17 +189,45 @@ class CifarTrainer:
         )
 
         train_start = time.time()
-        for epoch in range(start_epoch, self.config.epochs):
-            train_loss, train_acc = self._run_epoch(model, optimizer, train_loader, training=True)
-            val_loss, val_acc = self._run_epoch(model, optimizer, val_loader, training=False)
+        epoch_bar = tqdm(
+            range(start_epoch, self.config.epochs),
+            total=self.config.epochs,
+            initial=start_epoch,
+            desc=f"Fold {fold_index + 1}/{self.config.n_folds}",
+            unit="epoch",
+            dynamic_ncols=True,
+        )
+        for epoch in epoch_bar:
+            train_loss, train_acc = self._run_epoch(
+                model,
+                optimizer,
+                train_loader,
+                training=True,
+                desc=f"Fold {fold_index + 1} Train E{epoch + 1}/{self.config.epochs}",
+            )
+            val_loss, val_acc = self._run_epoch(
+                model,
+                optimizer,
+                val_loader,
+                training=False,
+                desc=f"Fold {fold_index + 1} Val   E{epoch + 1}/{self.config.epochs}",
+            )
             history["train_loss"].append(train_loss)
             history["val_loss"].append(val_loss)
             history["train_acc"].append(train_acc)
             history["val_acc"].append(val_acc)
+            epoch_bar.set_postfix(
+                train_acc=f"{train_acc:.4f}",
+                val_acc=f"{val_acc:.4f}",
+                best_val=f"{max(best_val_acc, val_acc):.4f}",
+            )
 
             if val_acc > best_val_acc:
                 best_val_acc = val_acc
+                epochs_without_improvement = 0
                 torch.save(model.state_dict(), best_model_path)
+            else:
+                epochs_without_improvement += 1
 
             torch.save(
                 {
@@ -182,10 +236,18 @@ class CifarTrainer:
                     "optimizer_state_dict": optimizer.state_dict(),
                     "history": history,
                     "best_val_acc": best_val_acc,
+                    "epochs_without_improvement": epochs_without_improvement,
                     "elapsed_seconds": elapsed_seconds + (time.time() - train_start),
                 },
                 checkpoint_path,
             )
+            if epochs_without_improvement >= self.config.patience:
+                tqdm.write(
+                    f"Early stopping at fold {fold_index + 1}, epoch {epoch + 1} "
+                    f"(patience={self.config.patience})."
+                )
+                break
+        epoch_bar.close()
 
         elapsed_seconds += time.time() - train_start
         plot_training_curves(history, fold_dir / "training_curves.pdf")
@@ -194,6 +256,7 @@ class CifarTrainer:
         model.eval()
         all_labels: List[np.ndarray] = []
         all_preds: List[np.ndarray] = []
+        all_logits: List[np.ndarray] = []
         prediction_rows: List[Dict[str, int]] = []
         with torch.no_grad():
             for batch_index, (images, labels) in enumerate(test_loader):
@@ -203,6 +266,7 @@ class CifarTrainer:
                 preds = logits.argmax(dim=1)
                 all_labels.append(labels.cpu().numpy())
                 all_preds.append(preds.cpu().numpy())
+                all_logits.append(logits.cpu().numpy())
                 for sample_index in range(labels.shape[0]):
                     prediction_rows.append(
                         {
@@ -215,9 +279,28 @@ class CifarTrainer:
 
         labels_np = np.concatenate(all_labels)
         preds_np = np.concatenate(all_preds)
+        logits_np = np.concatenate(all_logits)
         test_acc = float((labels_np == preds_np).mean())
         conf = confusion_matrix(labels_np, preds_np, labels=np.arange(len(self.class_names)))
         plot_confusion_matrix(conf, self.class_names, fold_dir / "confusion_matrix.pdf")
+        plot_pca_projection(
+            embeddings=logits_np,
+            labels=labels_np,
+            output_path=fold_dir / "pca_projection.pdf",
+            seed=self.config.seed + fold_index,
+        )
+        plot_tsne_projection(
+            embeddings=logits_np,
+            labels=labels_np,
+            output_path=fold_dir / "tsne_projection.pdf",
+            seed=self.config.seed + fold_index,
+        )
+        plot_quantum_circuit(
+            model_name=self.config.model_name,
+            n_qubits=self.config.n_qubits,
+            n_q_layers=self.config.n_q_layers,
+            output_path=fold_dir / "quantum_circuit.pdf",
+        )
         save_test_predictions_csv(prediction_rows, fold_dir / "test_predictions.csv")
 
         fold_metrics = {
@@ -250,9 +333,14 @@ class CifarTrainer:
         val_acc_by_fold: List[float] = []
         test_acc_by_fold: List[float] = []
         train_indices_ref = np.arange(len(train_targets))
-        for fold_index, (train_idx, val_idx) in enumerate(
-            split.split(train_indices_ref, train_targets.numpy())
-        ):
+        fold_bar = tqdm(
+            enumerate(split.split(train_indices_ref, train_targets.numpy())),
+            total=self.config.n_folds,
+            desc="Folds",
+            unit="fold",
+            dynamic_ncols=True,
+        )
+        for fold_index, (train_idx, val_idx) in fold_bar:
             fold_metrics_path = self._train_single_fold(
                 fold_index=fold_index,
                 train_indices=train_idx.tolist(),
@@ -267,6 +355,11 @@ class CifarTrainer:
             fold_metrics[fold_key] = metrics
             val_acc_by_fold.append(metrics["best_val_acc"])
             test_acc_by_fold.append(metrics["test_acc"])
+            fold_bar.set_postfix(
+                val_acc=f"{metrics['best_val_acc']:.4f}",
+                test_acc=f"{metrics['test_acc']:.4f}",
+            )
+        fold_bar.close()
 
         val_acc_np = np.asarray(val_acc_by_fold, dtype=float)
         test_acc_np = np.asarray(test_acc_by_fold, dtype=float)

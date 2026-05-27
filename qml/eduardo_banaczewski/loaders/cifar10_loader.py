@@ -3,6 +3,22 @@ from typing import Any, Dict, Tuple
 
 import torch
 from torch.utils.data import DataLoader
+
+_TORCHVISION_LIB = None
+
+
+def _ensure_torchvision_nms_schema() -> None:
+    """Define torchvision::nms schema when torchvision C++ ops are unavailable."""
+    global _TORCHVISION_LIB
+    try:
+        _TORCHVISION_LIB = torch.library.Library("torchvision", "DEF")
+        _TORCHVISION_LIB.define("nms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor")
+    except RuntimeError:
+        # Schema already exists in compatible torchvision builds.
+        pass
+
+
+_ensure_torchvision_nms_schema()
 from torchvision import datasets, transforms
 
 from qml.eduardo_banaczewski.experiment import CifarExperimentConfig
