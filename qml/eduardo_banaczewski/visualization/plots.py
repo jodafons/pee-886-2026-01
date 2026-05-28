@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Sequence, Tuple
+from typing import Dict, Optional, Sequence, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,6 +14,7 @@ __all__.extend(
         "plot_pca_projection",
         "plot_quantum_circuit",
         "plot_experiment_error_bars",
+        "plot_experiment_param_counts",
         "plot_experiment_loss_curves",
     ]
 )
@@ -26,9 +27,17 @@ def _style_axes(ax: plt.Axes) -> None:
     ax.spines["right"].set_visible(False)
 
 
-def _save_figure(fig: plt.Figure, output_path: Path, dpi: int = 220) -> None:
+def _save_figure(
+    fig: plt.Figure,
+    output_path: Path,
+    dpi: int = 220,
+    tight_layout_rect: Optional[Tuple[float, float, float, float]] = None,
+) -> None:
     """Persist figure with consistent export settings."""
-    fig.tight_layout()
+    if tight_layout_rect is None:
+        fig.tight_layout()
+    else:
+        fig.tight_layout(rect=tight_layout_rect)
     fig.savefig(output_path, dpi=dpi, bbox_inches="tight")
     plt.close(fig)
 
@@ -54,7 +63,7 @@ def plot_training_curves(history: Dict[str, Sequence[float]], output_path: Path)
     axes[1].set_title("Accuracy Curves")
     axes[1].legend()
     _style_axes(axes[1])
-    _save_figure(fig, output_path)
+    _save_figure(fig, output_path, tight_layout_rect=(0.0, 0.14, 1.0, 1.0))
 
 
 def plot_confusion_matrix(
@@ -270,24 +279,51 @@ def plot_experiment_error_bars(
     """Plot mean test accuracy with standard deviation across experiments."""
     plt.style.use("seaborn-v0_8-whitegrid")
     x = np.arange(len(experiment_names))
-    fig, ax = plt.subplots(figsize=(12, 5.5))
+    fig, ax = plt.subplots(figsize=(10, 4.8))
     ax.bar(
         x,
         means,
         yerr=stds,
-        width=0.52,
-        capsize=3,
+        width=0.68,
+        capsize=2,
         color="#4C78A8",
         alpha=0.92,
         edgecolor="#2F4B7C",
         linewidth=0.8,
-        error_kw={"elinewidth": 1.0, "ecolor": "#2F4B7C"},
+        error_kw={"elinewidth": 0.7, "ecolor": "#2F4B7C"},
     )
     ax.set_xticks(x)
     ax.set_xticklabels(experiment_names, rotation=30, ha="right")
     ax.set_ylabel("Test Accuracy")
     ax.set_ylim(0.0, 1.0)
     ax.set_title("Test Accuracy (mean ± std) by Experiment")
+    _style_axes(ax)
+    _save_figure(fig, output_path)
+
+
+def plot_experiment_param_counts(
+    experiment_names: Sequence[str],
+    param_counts: np.ndarray,
+    output_path: Path,
+) -> None:
+    """Plot trainable parameter counts for each experiment."""
+    plt.style.use("seaborn-v0_8-whitegrid")
+    x = np.arange(len(experiment_names))
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.bar(
+        x,
+        param_counts,
+        width=0.62,
+        color="#7E57C2",
+        alpha=0.9,
+        edgecolor="#4E2A8E",
+        linewidth=0.8,
+    )
+    ax.set_xticks(x)
+    ax.set_xticklabels(experiment_names, rotation=30, ha="right")
+    ax.set_ylabel("Trainable Parameters")
+    ax.set_title("Model Complexity (Trainable Parameters)")
+    ax.ticklabel_format(style="sci", axis="y", scilimits=(0, 0))
     _style_axes(ax)
     _save_figure(fig, output_path)
 
@@ -356,13 +392,11 @@ def plot_experiment_loss_curves(
     for ax in axes:
         ax.grid(True, alpha=0.3, linestyle="--", linewidth=0.7)
 
-    handles, labels = axes[1].get_legend_handles_labels()
-    fig.legend(
-        handles,
-        labels,
-        loc="lower center",
-        bbox_to_anchor=(0.5, -0.02),
-        ncol=min(4, len(experiment_names)),
+    axes[1].legend(
+        loc="upper right",
+        fontsize="small",
         frameon=False,
+        handlelength=1.4,
+        labelspacing=0.3,
     )
     _save_figure(fig, output_path)

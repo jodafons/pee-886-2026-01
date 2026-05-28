@@ -27,6 +27,7 @@ Use:
 python3 scripts/eduardo_banaczewski/run_cifar_experiment.py \
   --experiment-name exp_cnn_baseline \
   --model-name cnn_benchmark \
+  --patience 5 \
   --n-folds 5 \
   --seed 42
 ```
@@ -37,6 +38,8 @@ Available model names:
 - `qml_baseline`
 - `qml_strong`
 - `qml_data_reupload`
+- `qcnn_pure_baseline`
+- `qcnn_pure_strong`
 
 ## Outputs
 
@@ -51,6 +54,9 @@ Expected files include:
 - `fold_1/metrics.json` ... `fold_5/metrics.json`
 - `fold_1/training_curves.pdf` ... `fold_5/training_curves.pdf`
 - `fold_1/confusion_matrix.pdf` ... `fold_5/confusion_matrix.pdf`
+- `fold_1/pca_projection.pdf` ... `fold_5/pca_projection.pdf`
+- `fold_1/tsne_projection.pdf` ... `fold_5/tsne_projection.pdf`
+- `fold_1/quantum_circuit.pdf` ... `fold_5/quantum_circuit.pdf`
 - `fold_1/test_predictions.csv` ... `fold_5/test_predictions.csv`
 - `fold_1/best_model.pth` ... `fold_5/best_model.pth`
 
@@ -59,3 +65,5 @@ Expected files include:
 If execution is interrupted, re-run the same command with the same
 `--experiment-name`. The trainer resumes incomplete folds from
 `fold_*/checkpoint.pth` and skips completed folds.
+
+Early stopping is enabled by default with `patience=5`.

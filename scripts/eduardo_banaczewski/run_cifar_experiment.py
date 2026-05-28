@@ -1,5 +1,12 @@
 import argparse
+import sys
 from pathlib import Path
+
+import torch
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from qml.eduardo_banaczewski import (
     CifarExperimentConfig,
@@ -18,13 +25,21 @@ def parse_args() -> argparse.Namespace:
         "--model-name",
         type=str,
         default="cnn_benchmark",
-        choices=["cnn_benchmark", "qml_baseline", "qml_strong", "qml_data_reupload"],
+        choices=[
+            "cnn_benchmark",
+            "qml_baseline",
+            "qml_strong",
+            "qml_data_reupload",
+            "qcnn_pure_baseline",
+            "qcnn_pure_strong",
+        ],
     )
     parser.add_argument("--experiment-name", type=str, default="cifar_experiment")
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--learning-rate", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
+    parser.add_argument("--patience", type=int, default=5)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--num-workers", type=int, default=2)
     parser.add_argument("--n-folds", type=int, default=5)
@@ -32,6 +47,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=str, default="./outputs")
     parser.add_argument("--n-qubits", type=int, default=4)
     parser.add_argument("--n-q-layers", type=int, default=2)
+    parser.add_argument("--qml-device", type=str, default="default.qubit")
+    parser.add_argument("--allow-cpu", action="store_true")
     parser.add_argument("--non-deterministic", action="store_true")
     return parser.parse_args()
 
@@ -46,6 +63,7 @@ def main() -> None:
         epochs=args.epochs,
         learning_rate=args.learning_rate,
         weight_decay=args.weight_decay,
+        patience=args.patience,
         seed=args.seed,
         num_workers=args.num_workers,
         n_folds=args.n_folds,
@@ -53,8 +71,24 @@ def main() -> None:
         output_dir=args.output_dir,
         n_qubits=args.n_qubits,
         n_q_layers=args.n_q_layers,
+        qml_device=args.qml_device,
+        require_cuda=not args.allow_cpu,
         deterministic=not args.non_deterministic,
     )
+
+    if config.require_cuda and not torch.cuda.is_available():
+        raise RuntimeError(
+            "CUDA is required for this experiment, but no CUDA device is available. "
+            "Use --allow-cpu to bypass this check."
+        )
+    runtime_device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Torch runtime device: {runtime_device}")
+    if config.model_name != "cnn_benchmark":
+        if config.qml_device != "default.qubit":
+            raise RuntimeError(
+                f"Expected PennyLane device 'default.qubit', got '{config.qml_device}'."
+            )
+        print(f"PennyLane runtime device: {config.qml_device}")
 
     set_global_seed(config.seed, deterministic=config.deterministic)
     output_dir = Path(create_output_dir(config))
