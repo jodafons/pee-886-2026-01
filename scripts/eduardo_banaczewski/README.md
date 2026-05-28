@@ -34,6 +34,7 @@ Each run creates `outputs/<experiment_name>/` with per-fold checkpoints, metrics
 - `outputs/exp_all_experiments_analysis/<experiment>_pca_projection.pdf`
 - `outputs/exp_all_experiments_analysis/<experiment>_tsne_projection.pdf`
 - `outputs/exp_all_experiments_analysis/summary.json`
+- `outputs/<experiment>/confusion_matrix_confidence.pdf`
 
 Runtime defaults:
 

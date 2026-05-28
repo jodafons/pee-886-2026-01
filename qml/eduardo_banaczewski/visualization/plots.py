@@ -14,6 +14,7 @@ __all__.extend(
         "plot_pca_projection",
         "plot_quantum_circuit",
         "plot_experiment_error_bars",
+        "plot_confusion_matrix_with_confidence",
         "plot_experiment_param_counts",
         "plot_experiment_loss_curves",
     ]
@@ -90,6 +91,39 @@ def plot_confusion_matrix(
         for col in range(confusion_matrix.shape[1]):
             color = "white" if confusion_matrix[row, col] > threshold else "black"
             ax.text(col, row, str(confusion_matrix[row, col]), ha="center", va="center", color=color)
+
+    _style_axes(ax)
+    _save_figure(fig, output_path)
+
+
+def plot_confusion_matrix_with_confidence(
+    mean_matrix: np.ndarray,
+    std_matrix: np.ndarray,
+    class_names: Tuple[str, ...],
+    output_path: Path,
+) -> None:
+    """Plot normalized confusion matrix with mean ± std per cell."""
+    plt.style.use("seaborn-v0_8-whitegrid")
+    fig, ax = plt.subplots(figsize=(9, 7))
+    im = ax.imshow(mean_matrix, cmap="Blues", vmin=0.0, vmax=1.0)
+    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+    ax.set_xticks(np.arange(len(class_names)))
+    ax.set_yticks(np.arange(len(class_names)))
+    ax.set_xticklabels(class_names, rotation=45, ha="right")
+    ax.set_yticklabels(class_names)
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("True")
+    ax.set_title("Confusion Matrix (mean ± std, normalized)")
+
+    threshold = mean_matrix.max() * 0.5 if mean_matrix.size else 0.0
+    for row in range(mean_matrix.shape[0]):
+        for col in range(mean_matrix.shape[1]):
+            mean_val = mean_matrix[row, col] * 100.0
+            std_val = std_matrix[row, col] * 100.0
+            text = f"{mean_val:.1f}±{std_val:.1f}%"
+            color = "white" if mean_matrix[row, col] > threshold else "black"
+            ax.text(col, row, text, ha="center", va="center", color=color, fontsize=7)
 
     _style_axes(ax)
     _save_figure(fig, output_path)

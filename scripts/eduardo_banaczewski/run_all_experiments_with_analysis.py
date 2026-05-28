@@ -3,7 +3,7 @@ import json
 import shutil
 import sys
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import numpy as np
 
@@ -11,12 +11,27 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+CLASS_NAMES: Tuple[str, ...] = (
+    "airplane",
+    "automobile",
+    "bird",
+    "cat",
+    "deer",
+    "dog",
+    "frog",
+    "horse",
+    "ship",
+    "truck",
+)
+
 from qml.eduardo_banaczewski.experiment import CifarExperimentConfig
 from qml.eduardo_banaczewski.models.factory import create_model
 from qml.eduardo_banaczewski.visualization.plots import (
+    plot_confusion_matrix_with_confidence,
     plot_experiment_error_bars,
     plot_experiment_loss_curves,
     plot_experiment_param_counts,
+    plot_quantum_circuit,
 )
 
 EXPERIMENTS: List[str] = [
@@ -103,6 +118,42 @@ def _count_model_parameters(config: Dict[str, object]) -> Dict[str, int]:
     return {"total_params": int(total_params), "trainable_params": int(trainable_params)}
 
 
+def _aggregate_confusion_matrices(experiment_name: str) -> Tuple[np.ndarray, np.ndarray]:
+    experiment_dir = PROJECT_ROOT / "outputs" / experiment_name
+    fold_dirs = sorted(
+        entry
+        for entry in experiment_dir.iterdir()
+        if entry.is_dir() and entry.name.startswith("fold_")
+    )
+    if not fold_dirs:
+        raise FileNotFoundError(f"No fold directories found for {experiment_name}.")
+
+    fold_matrices = []
+    num_classes = len(CLASS_NAMES)
+    for fold_dir in fold_dirs:
+        predictions_path = fold_dir / "test_predictions.csv"
+        if not predictions_path.exists():
+            raise FileNotFoundError(f"Missing predictions CSV: {predictions_path}")
+        conf = np.zeros((num_classes, num_classes), dtype=int)
+        with predictions_path.open("r", encoding="utf-8", newline="") as stream:
+            reader = csv.DictReader(stream)
+            for row in reader:
+                true_label = int(row["true_label"])
+                pred_label = int(row["pred_label"])
+                conf[true_label, pred_label] += 1
+        row_sums = conf.sum(axis=1, keepdims=True)
+        normalized = np.divide(
+            conf,
+            row_sums,
+            out=np.zeros_like(conf, dtype=float),
+            where=row_sums != 0,
+        )
+        fold_matrices.append(normalized)
+
+    stacked = np.stack(fold_matrices, axis=0)
+    return stacked.mean(axis=0), stacked.std(axis=0)
+
+
 def main() -> None:
     experiment_names: List[str] = []
     means: List[float] = []
@@ -121,6 +172,19 @@ def main() -> None:
         config = metrics.get("config")
         if not isinstance(config, dict):
             raise ValueError(f"Missing config for experiment '{experiment_name}'.")
+        plot_quantum_circuit(
+            model_name=str(config["model_name"]),
+            n_qubits=int(config["n_qubits"]),
+            n_q_layers=int(config["n_q_layers"]),
+            output_path=PROJECT_ROOT / "outputs" / experiment_name / "quantum_circuit.pdf",
+        )
+        mean_conf, std_conf = _aggregate_confusion_matrices(experiment_name)
+        plot_confusion_matrix_with_confidence(
+            mean_conf,
+            std_conf,
+            CLASS_NAMES,
+            PROJECT_ROOT / "outputs" / experiment_name / "confusion_matrix_confidence.pdf",
+        )
         summary = metrics["summary"]
         folds = metrics["folds"]
         loss_curves = _aggregate_loss_curves(folds=folds)
