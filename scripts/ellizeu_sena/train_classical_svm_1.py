@@ -1,7 +1,7 @@
 import os
 
 from qml.ellizeu_sena.loaders import (
-    download_breast_cancer_dataset,
+    load_breast_cancer_dataset,
 )
 
 from qml.ellizeu_sena.models import (
@@ -26,8 +26,12 @@ GRID_SEARCH_PATH = os.path.join(
 
 
 def main():
-
-    X, y = download_breast_cancer_dataset()
+    
+    X, X_test, y, y_test = (
+        load_breast_cancer_dataset(
+            use_pca=False
+        )
+    )
 
     param_grid = {
         "C": [
