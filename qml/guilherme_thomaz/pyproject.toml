@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "quantum-flower-project"
+version = "1.0.1"
+description = "Federated Learning project with Quantum circuits using Flower"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "flwr[simulation]>=1.29.0",    
+    "flwr-datasets[vision]>=0.6.0",
+    "torch==2.8.0",
+    "torchvision==0.23.0",
+    "pennylane==0.41.1",
+    "autoray>=0.6,<0.7",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["evaluation", "loaders", "models", "trainer", "visualization"]
+
+[tool.flwr.app]
+publisher = "local"
+
+[tool.flwr.app.components]
+serverapp = "trainer.server_app:app"
+clientapp = "trainer.client_app:app"
+
+[tool.flwr.app.config]
+num-server-rounds = 5
+batch-size = 16
+local-epochs = 2
+learning-rate = 0.01
+fraction-fit = 1.0
+fraction-evaluate = 1
+
+# Quantum circuit configuration
+model = "BinaryQCNN"
+
+# Dataset
+dataset = "mnist"

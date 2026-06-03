@@ -1,0 +1,107 @@
+2026-04-05 20:36:13.026575: W tensorflow/stream_executor/platform/default/dso_loader.cc:60] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2026-04-05 20:36:13.026611: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2026-04-05 20:36:14.422805: I tensorflow/compiler/jit/xla_cpu_device.cc:41] Not creating XLA devices, tf_xla_enable_xla_devices not set
+2026-04-05 20:36:14.422953: W tensorflow/stream_executor/platform/default/dso_loader.cc:60] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2026-04-05 20:36:14.422965: W tensorflow/stream_executor/cuda/cuda_driver.cc:326] failed call to cuInit: UNKNOWN ERROR (303)
+2026-04-05 20:36:14.422978: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (guapimirim): /proc/driver/nvidia/version does not exist
+2026-04-05 20:36:14.423200: I tensorflow/core/platform/cpu_feature_guard.cc:142] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-04-05 20:36:14.423976: I tensorflow/compiler/jit/xla_gpu_device.cc:99] Not creating XLA devices, tf_xla_enable_xla_devices not set
+/home/gta/miniconda3/envs/qcnn/lib/python3.8/site-packages/_distutils_hack/__init__.py:31: UserWarning: Setuptools is replacing distutils. Support for replacing an already imported distutils is deprecated. In the future, this condition will fail. Register concerns at https://github.com/pypa/setuptools/issues/new?template=distutils-deprecation.yml
+  warnings.warn(
+
+
+Loss History for QCNN circuits, U_SU4 resize256 with cross_entropy
+iteration:  0  cost:  16.4451905025417
+iteration:  10  cost:  13.534210620088569
+iteration:  20  cost:  11.5880088509728
+iteration:  30  cost:  8.49830185767991
+iteration:  40  cost:  9.098174528431976
+iteration:  50  cost:  8.56306532939653
+iteration:  60  cost:  11.963298196287932
+iteration:  70  cost:  10.690949639583122
+iteration:  80  cost:  8.720881475891245
+iteration:  90  cost:  9.164674841059226
+iteration:  100  cost:  9.982225988941781
+iteration:  110  cost:  7.498364347237187
+iteration:  120  cost:  7.4586390559552544
+iteration:  130  cost:  9.523797179614881
+iteration:  140  cost:  9.937567945724885
+iteration:  150  cost:  9.04816098244229
+iteration:  160  cost:  9.69487883186018
+iteration:  170  cost:  8.704105674671169
+iteration:  180  cost:  13.98067207394033
+iteration:  190  cost:  9.775695896792527
+Accuracy for U_SU4 resize256 : 0.9155
+
+
+Loss History for QCNN circuits, U_SU4_1D resize256 with cross_entropy
+iteration:  0  cost:  21.598254656541506
+iteration:  10  cost:  9.005653767011571
+iteration:  20  cost:  10.805591140587527
+iteration:  30  cost:  8.952119155634072
+iteration:  40  cost:  7.995732078246903
+iteration:  50  cost:  9.688757298161681
+iteration:  60  cost:  7.856854290540591
+iteration:  70  cost:  10.816796652453707
+iteration:  80  cost:  9.893752415030928
+iteration:  90  cost:  7.730124493620518
+iteration:  100  cost:  6.2587518759458085
+iteration:  110  cost:  8.086077935828467
+iteration:  120  cost:  8.84344758055319
+iteration:  130  cost:  6.771047553493901
+iteration:  140  cost:  9.640691455896148
+iteration:  150  cost:  8.153351561194802
+iteration:  160  cost:  9.483319539775042
+iteration:  170  cost:  7.246675902681676
+iteration:  180  cost:  9.35194331615382
+iteration:  190  cost:  9.951206332139082
+Accuracy for U_SU4_1D resize256 : 0.874
+
+
+Loss History for QCNN circuits, U_SU4_no_pooling resize256 with cross_entropy
+iteration:  0  cost:  19.32626550527809
+iteration:  10  cost:  13.448505687656615
+iteration:  20  cost:  11.403081569243028
+iteration:  30  cost:  10.527329067312309
+iteration:  40  cost:  7.461572272877778
+iteration:  50  cost:  10.264590487725853
+iteration:  60  cost:  6.909985098788258
+iteration:  70  cost:  9.1071214811939
+iteration:  80  cost:  7.414018437845777
+iteration:  90  cost:  8.688433354233146
+iteration:  100  cost:  10.787250102697545
+iteration:  110  cost:  8.976100744948761
+iteration:  120  cost:  8.306187488955347
+iteration:  130  cost:  9.683104622933023
+iteration:  140  cost:  8.620169139190864
+iteration:  150  cost:  8.771905688982294
+iteration:  160  cost:  11.769667507686387
+iteration:  170  cost:  8.412584477855637
+iteration:  180  cost:  9.79366650135652
+iteration:  190  cost:  10.405324646995153
+Accuracy for U_SU4_no_pooling resize256 : 0.9035
+
+
+Loss History for QCNN circuits, U_9_1D resize256 with cross_entropy
+iteration:  0  cost:  17.348066548107038
+iteration:  10  cost:  17.311279438613525
+iteration:  20  cost:  17.284555762587576
+iteration:  30  cost:  17.094942025837863
+iteration:  40  cost:  17.554866084151843
+iteration:  50  cost:  16.828798441912095
+iteration:  60  cost:  16.251651007618133
+iteration:  70  cost:  16.205051282998085
+iteration:  80  cost:  16.4737839058794
+iteration:  90  cost:  17.051870772590245
+iteration:  100  cost:  16.57717863747679
+iteration:  110  cost:  16.163141041113512
+iteration:  120  cost:  16.079477802271793
+iteration:  130  cost:  15.910949376839493
+iteration:  140  cost:  16.596317878457906
+iteration:  150  cost:  17.223782384057944
+iteration:  160  cost:  16.04846174821153
+iteration:  170  cost:  15.986658473090033
+iteration:  180  cost:  16.26513179559264
+iteration:  190  cost:  17.574257774296793
+Accuracy for U_9_1D resize256 : 0.66

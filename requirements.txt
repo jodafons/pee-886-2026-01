@@ -24,3 +24,9 @@ quimb
 pylatexenc
 pennylane-qiskit
 kahypar
+typer
+autoray>=0.6,<0.7
+flwr[simulation]>=1.28.0
+flwr-datasets[vision]>=0.6.0
+torch
+torchvision
