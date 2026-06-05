@@ -1,0 +1,20 @@
+{
+    "best_params": {
+        "num_features": "4",
+        "C": "0.1",
+        "reps": "1",
+        "entanglement": "linear"
+    },
+    "best_score": 0.6263736263736264,
+    "results": {
+        "accuracy_mean": 0.6263736263736264,
+        "accuracy_std": 0.0,
+        "precision_mean": 0.6263736263736264,
+        "precision_std": 0.0,
+        "recall_mean": 1.0,
+        "recall_std": 0.0,
+        "f1_mean": 0.7702702702702703,
+        "f1_std": 0.0,
+        "execution_time_seconds": 559.1522736070037
+    }
+}
