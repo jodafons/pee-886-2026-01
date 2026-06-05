@@ -63,18 +63,17 @@ def main():
 
     run_grid_search(
         model_class=ClassicalSVM,
-        model_name="classical_svm_with_pca",
+        model_name="classical_svm",
         param_grid=param_grid,
         X=X_train,
         y=y_train,
         n_splits=5,
-        use_pca=True,
-        n_components=4,
+        use_pca=False,
         save_dir=GRID_SEARCH_PATH,
     )
 
     best_summary = build_best_parameters_json(
-        model_name="classical_svm_with_pca",
+        model_name="classical_svm",
         save_dir=GRID_SEARCH_PATH,
     )
 
@@ -99,7 +98,7 @@ def main():
     X_train_processed, _ = preprocessing_pipeline(
         X_train,
         X_test,
-        use_pca=True,
+        use_pca=False,
         n_components=4,
     )
     
@@ -129,7 +128,7 @@ def main():
     model.save(
         os.path.join(
             MODELS_PATH,
-            "classical_svm_with_pca.joblib",
+            "classical_svm.joblib",
         )
     )
     

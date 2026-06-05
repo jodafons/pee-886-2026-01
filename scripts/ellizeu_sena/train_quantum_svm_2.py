@@ -7,13 +7,14 @@ from qml.ellizeu_sena.loaders import (
 )
 
 from qml.ellizeu_sena.models import (
-    ClassicalSVM,
+    QuantumSVM,
 )
 
 from qml.ellizeu_sena.trainer import (
     run_grid_search,
     build_best_parameters_json,
 )
+
 
 PROJECT_ROOT = os.path.abspath(
     os.path.join(
@@ -34,7 +35,7 @@ GRID_SEARCH_PATH = os.path.join(
 
 
 def main():
-    
+
     # 1. load raw data
     X, y = download_breast_cancer_dataset()
     
@@ -47,63 +48,66 @@ def main():
     )
 
     param_grid = {
+        "num_features": [30],
         "C": [
             0.1,
             1,
             10,
-            100,
         ],
-        "gamma": [
-            "scale",
-            0.1,
-            0.01,
-            0.001,
+        "reps": [
+            1,
+            2,
+            3,
+        ],
+        "entanglement": [
+            "linear",
+            "full",
         ],
     }
 
     run_grid_search(
-        model_class=ClassicalSVM,
-        model_name="classical_svm_with_pca",
+        model_class=QuantumSVM,
+        model_name="quantum_svm",
         param_grid=param_grid,
         X=X_train,
         y=y_train,
         n_splits=5,
-        use_pca=True,
+        use_pca=False,
         n_components=4,
         save_dir=GRID_SEARCH_PATH,
     )
 
     best_summary = build_best_parameters_json(
-        model_name="classical_svm_with_pca",
+        model_name="quantum_svm",
         save_dir=GRID_SEARCH_PATH,
     )
-
+    
     best_params = best_summary[
         "best_params"
     ]
-
+    
+    best_params["num_features"] = int(
+        best_params["num_features"]
+    )
+    
+    best_params["reps"] = int(
+        best_params["reps"]
+    )
+    
     best_params["C"] = float(
         best_params["C"]
     )
-    
-    if best_params["gamma"] != "scale":
-        best_params["gamma"] = float(
-            best_params["gamma"]
+
+    X_train_processed, X_test_processed = (
+        preprocessing_pipeline(
+            X_train,
+            X_test,
+            use_pca=True,
+            n_components=4,
         )
-
-
-    # -------------------------
-    # Train final model
-    # -------------------------
-    
-    X_train_processed, _ = preprocessing_pipeline(
-        X_train,
-        X_test,
-        use_pca=True,
-        n_components=4,
     )
     
-    model = ClassicalSVM(
+    model = QuantumSVM(
         **best_params
     )
     
@@ -111,11 +115,7 @@ def main():
         X_train_processed,
         y_train,
     )
-    
-    # -------------------------
-    # Save model
-    # -------------------------
-    
+
     MODELS_PATH = os.path.join(
         DATA_PATH,
         "models",
@@ -129,7 +129,7 @@ def main():
     model.save(
         os.path.join(
             MODELS_PATH,
-            "classical_svm_with_pca.joblib",
+            "quantum_svm.joblib",
         )
     )
     
