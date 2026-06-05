@@ -1,6 +1,8 @@
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 
+import joblib
+
 
 class ClassicalSVM:
     """
@@ -71,3 +73,36 @@ class ClassicalSVM:
         predictions = self.predict(X_test)
 
         return accuracy_score(y_test, predictions)
+
+    def save(
+        self,
+        filepath,
+    ):
+        """
+        Save trained model.
+        """
+
+        joblib.dump(
+            self.model,
+            filepath,
+        )
+
+
+    @classmethod
+    def load(
+        cls,
+        filepath,
+    ):
+        """
+        Load trained model.
+        """
+
+        model = joblib.load(
+            filepath,
+        )
+
+        instance = cls()
+
+        instance.model = model
+
+        return instance

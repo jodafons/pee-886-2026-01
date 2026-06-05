@@ -5,6 +5,8 @@ from qiskit.circuit.library import ZZFeatureMap
 from qiskit_machine_learning.kernels import FidelityQuantumKernel
 from qiskit_machine_learning.algorithms import QSVC
 
+import joblib
+
 
 class QuantumSVM:
     """
@@ -150,4 +152,23 @@ class QuantumSVM:
             f"C={self.C}, "
             f"entanglement='{self.entanglement}'"
             ")"
+        )
+    
+    def save(
+        self,
+        filepath,
+    ):
+        joblib.dump(
+            self,
+            filepath,
+        )
+
+
+    @classmethod
+    def load(
+        cls,
+        filepath,
+    ):
+        return joblib.load(
+            filepath
         )
