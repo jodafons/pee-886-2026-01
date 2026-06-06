@@ -2,6 +2,10 @@ import os
 import json
 import matplotlib.pyplot as plt
 
+from sklearn.metrics import (
+    ConfusionMatrixDisplay,
+)
+
 
 def ensure_dir(path):
     os.makedirs(path, exist_ok=True)
@@ -66,3 +70,60 @@ def plot_from_saved(
             metric=metric,
             output_path=f"{output_dir}/{metric}.pdf",
         )
+
+
+
+
+def plot_confusion_matrix(
+    confusion_matrix,
+    class_names,
+    title="Confusion Matrix",
+    output_path=None,
+):
+    """
+    Plot colored confusion matrix.
+
+    Parameters
+    ----------
+    confusion_matrix : np.ndarray
+        Matrix returned by sklearn.
+
+    class_names : list[str]
+        Labels for classes.
+
+    title : str
+        Figure title.
+
+    output_path : str, optional
+        Path to save PDF.
+    """
+
+    fig, ax = plt.subplots(
+        figsize=(6, 5)
+    )
+
+    display = ConfusionMatrixDisplay(
+        confusion_matrix=confusion_matrix,
+        display_labels=class_names,
+    )
+
+    display.plot(
+        ax=ax,
+        colorbar=True,
+    )
+
+    ax.set_title(title)
+
+    plt.tight_layout()
+
+    if output_path is not None:
+
+        plt.savefig(
+            output_path,
+            format="pdf",
+            bbox_inches="tight",
+        )
+
+    plt.show()
+
+    return fig

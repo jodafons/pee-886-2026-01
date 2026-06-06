@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 def draw_quantum_feature_map(
     feature_map,
     output_path=None,
+    output='mpl'
 ):
     """
     Draw and optionally save a quantum feature map circuit.
@@ -18,7 +19,7 @@ def draw_quantum_feature_map(
     """
 
     figure = feature_map.draw(
-        output="mpl"
+        output=output
     )
 
     if output_path is not None:
