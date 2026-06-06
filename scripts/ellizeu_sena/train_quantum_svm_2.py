@@ -50,7 +50,7 @@ def main():
     param_grid = {
         "num_features": [30],
         "C": [
-            0.1,
+            #0.1,
             1,
             10,
         ],
@@ -63,6 +63,7 @@ def main():
             "linear",
             "full",
         ],
+        "feature_map_type": ["zz", "pauli"],
     }
 
     run_grid_search(

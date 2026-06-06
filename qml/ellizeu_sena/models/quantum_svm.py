@@ -25,6 +25,7 @@ class QuantumSVM:
         reps=2,
         C=1.0,
         entanglement="full",
+        feature_map_type="zz",
     ):
         """
         Parameters
@@ -50,13 +51,43 @@ class QuantumSVM:
         self.reps = reps
         self.C = C
         self.entanglement = entanglement
+        self.feature_map_type = feature_map_type
 
-        # Quantum feature map
-        self.feature_map = ZZFeatureMap(
-            feature_dimension=num_features,
-            reps=reps,
-            entanglement=entanglement,
+        from qiskit.circuit.library import (
+            ZZFeatureMap,
+            ZFeatureMap,
+            PauliFeatureMap,
         )
+        
+        if feature_map_type == "zz":
+        
+            self.feature_map = ZZFeatureMap(
+                feature_dimension=num_features,
+                reps=reps,
+                entanglement=entanglement,
+            )
+        
+        elif feature_map_type == "z":
+        
+            self.feature_map = ZFeatureMap(
+                feature_dimension=num_features,
+                reps=reps,
+            )
+        
+        elif feature_map_type == "pauli":
+        
+            self.feature_map = PauliFeatureMap(
+                feature_dimension=num_features,
+                reps=reps,
+                paulis=["Z", "ZZ"],
+                entanglement=entanglement,
+            )
+        
+        else:
+        
+            raise ValueError(
+                f"Unknown feature map: {feature_map_type}"
+            )
 
         # Quantum kernel
         self.quantum_kernel = FidelityQuantumKernel(
@@ -142,6 +173,7 @@ class QuantumSVM:
             "reps": self.reps,
             "C": self.C,
             "entanglement": self.entanglement,
+            "feature_map_type": self.feature_map_type,
         }
 
     def __repr__(self):
