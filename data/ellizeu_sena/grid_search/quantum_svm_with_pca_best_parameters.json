@@ -1,0 +1,21 @@
+{
+    "best_params": {
+        "num_features": 4,
+        "C": 1.0,
+        "reps": 3,
+        "entanglement": "linear",
+        "feature_map_type": "zz"
+    },
+    "best_score": 0.6021978021978022,
+    "results": {
+        "accuracy_mean": 0.6021978021978022,
+        "accuracy_std": 0.0272740080131667,
+        "precision_mean": 0.6249959734739466,
+        "precision_std": 0.0146928253239748,
+        "recall_mean": 0.912280701754386,
+        "recall_std": 0.0332871332649302,
+        "f1_mean": 0.7416558209801876,
+        "f1_std": 0.0192869236721534,
+        "execution_time_seconds": 1244.9136926120118
+    }
+}

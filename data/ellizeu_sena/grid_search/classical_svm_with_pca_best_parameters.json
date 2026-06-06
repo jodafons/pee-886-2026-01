@@ -1,0 +1,18 @@
+{
+    "best_params": {
+        "C": 100.0,
+        "gamma": "0.01"
+    },
+    "best_score": 0.9648351648351648,
+    "results": {
+        "accuracy_mean": 0.9648351648351648,
+        "accuracy_std": 0.0128152788897698,
+        "precision_mean": 0.9764018811809866,
+        "precision_std": 0.0245258799363835,
+        "recall_mean": 0.968421052631579,
+        "recall_std": 0.0280701754385965,
+        "f1_mean": 0.9717862201351388,
+        "f1_std": 0.010437118384666,
+        "execution_time_seconds": 0.0223936410038732
+    }
+}

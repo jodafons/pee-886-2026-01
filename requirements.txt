@@ -18,6 +18,7 @@ python-multipart
 dash-cytoscape
 qiskit
 qiskit-aer
+qiskit-machine-learning
 pennylane
 tensorflow
 quimb
