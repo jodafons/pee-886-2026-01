@@ -1,0 +1,25 @@
+font.family : serif
+font.size : 12
+axes.titlesize : 14
+axes.labelsize : 12
+legend.fontsize : 10
+xtick.labelsize : 10
+ytick.labelsize : 10
+
+lines.linewidth : 2
+lines.markersize : 8
+lines.markeredgewidth : 1.5   # Borda do ponto grossa
+lines.markeredgecolor : white # Borda branca para separar da barra de erro
+errorbar.capsize : 3          # Tamanho do "chapéu" da barra de erro
+
+axes.prop_cycle : cycler('color', ['1f77b4', 'ff7f0e', '2ca02c', 'd62728', '9467bd', '8c564b'])
+
+axes.spines.top : False
+axes.spines.right : False
+axes.grid : True
+grid.alpha : 0.3
+grid.linestyle : --
+
+figure.figsize : 6, 4
+figure.dpi : 300
+savefig.bbox : tight
